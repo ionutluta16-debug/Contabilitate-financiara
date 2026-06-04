@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Quiz — Contabilitate Financiară</title>
+    <!-- React, ReactDOM si Babel pentru incarcare directa si rulare fara build (ideal pentru Netlify) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Source+Serif+4:wght@300;400;600&display=swap" rel="stylesheet"/>
+    <style>
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+        body{background:#0a0f1e;min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:'Source Serif 4',Georgia,serif;padding:1.5rem}
+        .shell{width:100%;max-width:780px;animation:fadeUp 0.5s ease both}
+        @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+        .card{background:#111827;border:1px solid #1f2937;border-radius:1.5rem;padding:2.5rem;box-shadow:0 20px 25px -5px rgba(0,0,0,0.5),0 10px 10px -5px rgba(0,0,0,0.04);position:relative;overflow:hidden}
+        .card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,#3b82f6,#8b5cf6)}
+        .header{display:flex;justify-content:between;align-items:center;margin-bottom:2rem;border-bottom:1px solid #1f2937;padding-bottom:1.2rem}
+        .header-content{display:flex;justify-content:space-between;width:100%;align-items:center}
+        .title{font-family:'Playfair Display',Georgia,serif;color:#f3f4f6;font-size:1.75rem;font-weight:800}
+        .meta{font-size:0.875rem;color:#9ca3af;font-variant-numeric:tabular-nums}
+        .question-container{margin-bottom:2.5rem}
+        .question-text{font-size:1.35rem;line-height:1.6;color:#f3f4f6;margin-bottom:2rem;font-weight:400}
+        .options-list{display:flex;flex-direction:column;gap:1rem}
+        .option-item{display:flex;align-items:flex-start;background:#1f2937;border:2px solid #374151;border-radius:1rem;padding:1.15rem 1.5rem;cursor:pointer;transition:all 0.2s ease;position:relative}
+        .option-item:hover{background:#374151;border-color:#4b5563;transform:translateY(-1px)}
+        .option-item.selected{background:rgba(59,130,246,0.1);border-color:#3b82f6}
+        .option-item.correct{background:rgba(16,185,129,0.1);border-color:#10b981}
+        .option-item.incorrect{background:rgba(239,68,68,0.1);border-color:#ef4444}
+        .badge{width:1.75rem;height:1.75rem;border-radius:9999px;background:#374151;color:#d1d5db;display:flex;align-items:center;justify-content:center;font-size:0.875rem;font-weight:600;margin-right:1rem;flex-shrink:0;transition:all 0.2s ease}
+        .option-item.selected .badge{background:#3b82f6;color:#ffffff}
+        .option-item.correct .badge{background:#10b981;color:#ffffff}
+        .option-item.incorrect .badge{background:#ef4444;color:#ffffff}
+        .option-text{color:#e5e7eb;font-size:1.1rem;line-height:1.5;padding-top:0.05rem;width:100%}
+        .feedback{margin-top:2rem;padding:1.25rem 1.5rem;border-radius:1rem;font-size:1.05rem;line-height:1.5;display:flex;align-items:center;gap:0.75rem;animation:fadeIn 0.3s ease both}
+        @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+        .feedback-success{background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.2);color:#34d399}
+        .feedback-error{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);color:#f87171}
+        .feedback-icon{font-size:1.5rem;flex-shrink:0}
+        .actions{margin-top:2.5rem;display:flex;justify-content:flex-end;gap:1rem}
+        .btn{padding:0.85rem 2rem;border-radius:0.75rem;font-size:1rem;font-weight:600;cursor:pointer;border:none;transition:all 0.2s ease;font-family:'Source Serif 4',serif}
+        .btn-primary{background:#3b82f6;color:#ffffff}
+        .btn-primary:hover:not(:disabled){background:#2563eb;transform:translateY(-1px)}
+        .btn-primary:disabled{background:#1f2937;color:#4b5563;cursor:not-allowed}
+        .btn-secondary{background:transparent;color:#9ca3af;border:1px solid #374151}
+        .btn-secondary:hover{background:#1f2937;color:#ffffff}
+        .progress-bar{position:absolute;bottom:0;left:0;height:4px;background:#3b82f6;transition:width 0.3s ease}
+        .score-board{text-align:center;padding:3rem 1.5rem}
+        .score-num{font-family:'Playfair Display',serif;font-size:4rem;font-weight:800;color:#3b82f6;margin-bottom:1rem}
+        .score-label{font-size:1.25rem;color:#e5e7eb;margin-bottom:2rem}
+        .stat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1.5rem;margin-bottom:3rem}
+        .stat-card{background:#1f2937;border:1px solid #374151;border-radius:1rem;padding:1.5rem;text-align:center}
+        .stat-val{font-size:2rem;font-weight:600;color:#f3f4f6;margin-bottom:0.25rem}
+        .stat-lbl{font-size:0.875rem;color:#9ca3af;text-transform:uppercase;letter-spacing:0.05em}
+        .formula-box{background:#181e2e;padding:0.75rem 1rem;border-radius:0.5rem;border-left:3px solid #3b82f6;margin:0.75rem 0;font-family:monospace,serif;color:#60a5fa;overflow-x:auto;white-space:pre-wrap;word-break:break-all}
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        // Chestionarul complet de 50 de intrebari, cu raspunsurile corecte marcate fara steluțe
+        const originalQuestions = [
+            {
+                id: 1,
+                text: "Care dintre formulele contabile enumerate sunt în concordanţă cu explicaţia dată:",
+                options: [
+                    { id: "a", text: "2111 = 401 - cumpărarea de teren din subvenții pentru investiții" },
+                    { id: "b", text: "5121 = 445 - încasarea creanţei din vânzarea unui mijloc fix cu TVA" },
+                    { id: "c", text: "461 = % \n      7583 \n      4427 - vânzarea unui mijloc fix cu TVA" },
+                    { id: "d", text: "4111 = % \n       7583 \n       4426 - vânzarea unui mijloc fix cu TVA" }
+                ],
+                correct: ["c"]
+            },
+            {
+                id: 2,
+                text: "Care dintre formulele contabile enumerate sunt în concordanţă cu explicaţia dată:",
+                options: [
+                    { id: "a", text: "% = 404 - achizitii de materii prime cu factura\n301\n4426" },
+                    { id: "b", text: "% = 408 - achiziția de stocuri fără factură\n301\n4428" },
+                    { id: "c", text: "345 = % - consumul de materii prime pentru producţie\n301\n308" },
+                    { id: "d", text: "% = 408 - achiziția pe bază de factură\n301\n4428" }
+                ],
+                correct: ["b"]
+            },
+            {
+                id: 3,
+                text: "Produsele pot fi evaluate la:",
+                options: [
+                    { id: "a", text: "costul de producție și prețul standard" },
+                    { id: "b", text: "pretul de achizitie si pretul standard" },
+                    { id: "c", text: "pretul de productie si pretul de achizitie" },
+                    { id: "d", text: "valoarea de aport" }
+                ],
+                correct: ["a"]
+            },
+            {
+                id: 4,
+                text: "Care este sensul formulei contabile: 5311 = 4551",
+                options: [
+                    { id: "a", text: "depunerea de numerar la bancă" },
+                    { id: "b", text: "restituirea creditării acordate de asociați" },
+                    { id: "c", text: "creditarea societății în numerar de către asociați" },
+                    { id: "d", text: "plata dobânzilor datorate asociaților" }
+                ],
+                correct: ["c"]
+            },
+            {
+                id: 5,
+                text: "Ce semnifică formula contabilă: % = 4551 cu subconturile 666, 446",
+                options: [
+                    { id: "a", text: "înregistrarea creditării societății în numerar de către asociați" },
+                    { id: "b", text: "calculul și înregistrarea dobânzii datorate asociaților pentru sumele puse la dispoziție și a impozitului pe dividende" },
+                    { id: "c", text: "calculul și înregistrarea dobânzii datorate asociaților pentru sumele puse la dispoziție și a impozitului reținut la sursă" },
+                    { id: "d", text: "restituirea sumelor depuse de asociați" }
+                ],
+                correct: ["c"]
+            },
+            {
+                id: 6,
+                text: "Ce reflectă formula contabilă: 345 = 711 5.000 lei",
+                options: [
+                    { id: "a", text: "obținerea de produse finite la cost de achiziție" },
+                    { id: "b", text: "obținerea de produse finite la cost de producție" },
+                    { id: "c", text: "vânzarea produselor finite" },
+                    { id: "d", text: "consumul de produse finite în cadrul entității" }
+                ],
+                correct: ["b"]
+            },
+            {
+                id: 7,
+                text: "Ce reflectă formula contabilă: 711 = 345 5.000 lei",
+                options: [
+                    { id: "a", text: "vânzarea produselor finite la preț de vânzare" },
+                    { id: "b", text: "scoaterea din gestiune a produselor finite vândute (la cost de producție)" },
+                    { id: "c", text: "obținerea de produse finite" },
+                    { id: "d", text: "inventarierea stocurilor de produse" }
+                ],
+                correct: ["b"]
+            },
+            {
+                id: 8,
+                text: "Înregistrările contabile: 1) 4111 = 7015 şi 2) 4111 = 4427 reflectă:",
+                options: [
+                    { id: "a", text: "vânzarea de produse finite" },
+                    { id: "b", text: "vânzarea de mărfuri" },
+                    { id: "c", text: "vânzarea de activități anexe" },
+                    { id: "d", text: "reducerea acordată clienților" }
+                ],
+                correct: ["c"]
+            },
+            {
+                id: 9,
+                text: "Formula contabilă: 609 = 401 reflectă:",
+                options: [
+                    { id: "a", text: "reducerea comercială primită de la furnizor înscrisă pe factura de achiziție a stocurilor" },
+                    { id: "b", text: "reducerea comercială primită ulterior de la furnizor (pe factură separată)" },
+                    { id: "c", text: "reducerea financiară acordată clienților" },
+                    { id: "d", text: "ajustarea pentru deprecierea stocurilor" }
+                ],
+                correct: ["b"]
+            },
+            {
+                id: 10,
+                text: "Formula contabilă: 4111 = 709 reflectă:",
+                options: [
+                    { id: "a", text: "reducerea comercială primită ulterior de la furnizor" },
+                    { id: "b", text: "reducerea comercială acordată ulterior clienților (pe factură separată)" },
+                    { id: "c", text: "reducerea financiară acordată clienților" },
+                    { id: "d", text: "returnarea de mărfuri de către clienți" }
+                ],
+                correct: ["b"]
+            },
+            {
+                id: 11,
+                text: "Ajustările pentru deprecierea stocurilor se înregistrează pe seama:",
+                options: [
+                    { id: "a", text: "veniturilor din exploatare" },
+                    { id: "b", text: "cheltuielilor financiare" },
+                    { id: "c", text: "cheltuielilor de exploatare" },
+                    { id: "d", text: "veniturilor financiare" }
+                ],
+                correct: ["c"]
+            },
+            {
+                id: 12,
+                text: "Ce semnifică formula contabilă: 6814 = 391",
+                options: [
+                    { id: "a", text: "crearea sau majorarea unei ajustări pentru deprecierea materiilor prime" },
+                    { id: "b", text: "reluarea la venituri a ajustării pentru deprecierea materiilor prime" },
+                    { id: "c", text: "scoaterea din gestiune a materiilor prime depreciate" },
+                    { id: "d", text: "înregistrarea pierderilor din calamități" }
+                ],
+                correct: ["a"]
+            },
+            {
+                id: 13,
+                text: "Înregistrarea contabilă: 391 = 7814 reflectă:",
+                options: [
+                    { id: "a", text: "constituirea unei ajustări pentru deprecierea materiilor prime" },
+                    { id: "b", text: "anularea sau diminuarea ajustării pentru deprecierea materiilor prime" },
+                    { id: "c", text: "vânzarea materiilor prime depreciate" },
+                    { id: "d", text: "regularizarea diferențelor de preț" }
+                ],
+                correct: ["b"]
+            },
+            {
+                id: 14,
+                text: "Înregistrarea contabilă: 6814 = 395 reflectă:",
+                options: [
+                    { id: "a", text: "ajustarea pentru deprecierea mărfurilor" },
+                    { id: "b", text: "ajustarea pentru deprecierea produselor finite" },
+                    { id: "c", text: "ajustarea pentru deprecierea ambalajelor" },
+                    { id: "d", text: "ajustarea pentru deprecierea producției în curs" }
+                ],
+                correct: ["b"]
+            },
+            {
+                id: 15,
+                text: "Achiziția de acțiuni cotate, în scopul realizării unui câștig pe termen scurt, se reflectă prin formula:",
+                options: [
+                    { id: "a", text: "261 = 508" },
+                    { id: "b", text: "501 = 508" },
+                    { id: "c", text: "501 = 5121" },
+                    { id: "d", text: "261 = 5121" }
+                ],
+                correct: ["c"]
+            },
+            {
+                id: 16,
+                text: "Vânzarea acțiunilor cotate (deținute ca investiții pe termen scurt) la un preț de cesiune mai mare decât costul lor de achiziție se reflectă prin formula:",
+                options: [
+                    { id: "a", text: "5121 = % \n       501 \n       7642" },
+                    { id: "b", text: "5121 = % \n       501 \n       6642" },
+                    { id: "c", text: "5121 = 501" },
+                    { id: "d", text: "5121 = 7641" }
+                ],
+                correct: ["a"]
+            },
+            {
+                id: 17,
+                text: "Cesiunea acțiunilor cotate la un preț de vânzare mai mic decât costul de achiziție se reflectă prin formula:",
+                options: [
+                    { id: "a", text: "5121 = 501" },
+                    { id: "b", text: "% = 501 \n5121 \n6642" },
+                    { id: "c", text: "% = 501 \n5121 \n7642" },
+                    { id: "d", text: "5121 = 7642" }
+                ],
+                correct: ["b"]
+            },
+            {
+                id: 18,
+                text: "Primele de emisiune pot fi utilizate pentru:",
+                options: [
+                    { id: "a", text: "acoperirea pierderilor contabile" },
+                    { id: "b", text: "majorarea capitalului social" },
+                    { id: "c", text: "constituirea de rezerve" },
+                    { id: "d", text: "toate variantele de mai sus" }
+                ],
+                correct: ["d"]
+            },
+            {
+                id: 19,
+                text: "Emiterea de noi acțiuni în scopul majorării capitalului social la un preț de emisiune mai mare decât valoarea nominală se reflectă prin formula:",
+                options: [
+                    { id: "a", text: "456 = % \n      1011 \n      1041" },
+                    { id: "b", text: "456 = 1011" },
+                    { id: "c", text: "5121 = 1012" },
+                    { id: "d", text: "456 = 1041" }
+                ],
+                correct: ["a"]
+            },
+            {
+                id: 20,
+                text: "Pentru depunerile de capital subscris în contul curent de la bancă, formula contabilă este:",
+                options: [
+                    { id: "a", text: "1011 = 1012" },
+                    { id: "b", text: "5121 = 456" },
+                    { id: "c", text: "456 = 1011" },
+                    { id: "d", text: "5121 = 1011" }
+                ],
+                correct: ["b"]
+            },
+            {
+                id: 21,
+                text: "Regularizarea capitalului subscris vărsat se reflectă prin formula:",
+                options: [
+                    { id: "a", text: "1011 = 1012" },
+                    { id: "b", text: "1012 = 1011" },
+                    { id: "c", text: "456 = 1011" },
+                    { id: "d", text: "5121 = 456" }
+                ],
+                correct: ["a"]
+            },
+            {
+                id: 22,
+                text: "Care este formula contabilă de înregistrare a amortizării imobilizărilor corporale:",
+                options: [
+                    { id: "a", text: "6811 = 280" },
+                    { id: "b", text: "6811 = 281" },
+                    { id: "c", text: "281 = 6811" },
+                    { id: "d", text: "6813 = 281" }
+                ],
+                correct: ["b"]
+            },
+            {
+                id: 23,
+                text: "Scoaterea din gestiune a unui echipament tehnologic complet amortizat se înregistrează astfel:",
+                options: [
+                    { id: "a", text: "% = 2131 \n2813 \n6583" },
+                    { id: "b", text: "2813 = 2131" },
+                    { id: "c", text: "6583 = 2131" },
+                    { id: "d", text: "% = 2131 \n2813 \n6811" }
+                ],
+                correct: ["b"]
+            },
+            {
+                id: 24,
+                text: "Scoaterea din gestiune a unui mijloc de transport incomplet amortizat se înregistrează astfel:",
+                options: [
+                    { id: "a", text: "% = 2133 \n2813 \n6583" },
+                    { id: "b", text: "2813 = 2133" },
+                    { id: "c", text: "6583 = 2133" },
+                    { id: "d", text: "2813 = % \n       2133 \n       6583" }
+                ],
+                correct: ["a"]
+            },
+            {
+                id: 25,
+                text: "Donația acordată sub formă de numerar unei asociații caritabile se reflectă prin formula:",
+                options: [
+                    { id: "a", text: "6581 = 5121" },
+                    { id: "b", text: "6582 = 5121" },
+                    { id: "c", text: "6584 = 5121" },
+                    { id: "d", text: "6582 = 5311" }
+                ],
+                correct: ["b"]
+            },
+            {
+                id: 26,
+                text: "Activele primite prin donație (cu titlu gratuit) se înregistrează la:",
+                options: [
+                    { id: "a", text: "cost de achiziție" },
+                    { id: "b", text: "cost de producție" },
+                    { id: "c", text: "valoarea justă" },
+                    { id: "d", text: "valoarea nominală" }
+                ],
+                correct: ["c"]
+            },
+            {
+                id: 27,
+                text: "Înregistrarea primirii cu titlu gratuit a unui utilaj se reflectă prin formula:",
+                options: [
+                    { id: "a", text: "2131 = 131" },
+                    { id: "b", text: "2131 = 7582" },
+                    { id: "c", text: "2131 = 4753" },
+                    { id: "d", text: "2131 = 1011" }
+                ],
+                correct: ["c"]
+            },
+            {
+                id: 28,
+                text: "Subvențiile guvernamentale pentru investiții se înregistrează în contabilitate ca:",
+                options: [
+                    { id: "a", text: "venituri din exploatare direct" },
+                    { id: "b", text: "capitaluri proprii direct" },
+                    { id: "c", text: "venituri amânate (în contul 475)" },
+                    { id: "d", text: "provizioane pentru riscuri și cheltuieli" }
+                ],
+                correct: ["c"]
+            },
+            {
+                id: 29,
+                text: "Trecerea treptată la venituri a subvențiilor pentru investiții, pe măsura amortizării activului, se înregistrează:",
+                options: [
+                    { id: "a", text: "475 = 7584" },
+                    { id: "b", text: "475 = 7582" },
+                    { id: "c", text: "7584 = 475" },
+                    { id: "d", text: "475 = 708" }
+                ],
+                correct: ["a"]
+            },
+            {
+                id: 30,
+                text: "Care este formula de înregistrare a profitului net realizat în exercițiul financiar precedent, repartizat la rezerve legale:",
+                options: [
+                    { id: "a", text: "121 = 1061" },
+                    { id: "b", text: "129 = 1061" },
+                    { id: "c", text: "117 = 1061" },
+                    { id: "d", text: "121 = 129" }
+                ],
+                correct: ["b"]
+            },
+            {
+                id: 31,
+                text: "Înregistrarea dividendelor datorate asociaților din profitul net al exercițiului precedent se face prin formula:",
+                options: [
+                    { id: "a", text: "121 = 457" },
+                    { id: "b", text: "117 = 457" },
+                    { id: "c", text: "129 = 457" },
+                    { id: "d", text: "457 = 117" }
+                ],
+                correct: ["b"]
+            },
+            {
+                id: 32,
+                text: "Ce semnifică formula contabilă: 129 = 1061",
+                options: [
+                    { id: "a", text: "repartizarea profitului curent pentru rezerve legale la sfârșitul exercițiului" },
+                    { id: "b", text: "utilizarea rezervelor legale pentru acoperirea pierderilor" },
+                    { id: "c", text: "majorarea capitalului din rezerve" },
+                    { id: "d", text: "repartizarea dividendelor interimare" }
+                ],
+                correct: ["a"]
+            },
+            {
+                id: 33,
+                text: "Ce semnifică formula contabilă: 121 = 129",
+                options: [
+                    { id: "a", text: "închiderea contului de repartizare a profitului la începutul exercițiului următor" },
+                    { id: "b", text: "repartizarea profitului curent în timpul anului" },
+                    { id: "c", text: "acoperirea pierderilor din anii precedenți" },
+                    { id: "d", text: "închiderea conturilor de venituri și cheltuieli" }
+                ],
+                correct: ["a"]
+            },
+            {
+                id: 34,
+                text: "Acoperirea pierderii contabile din rezerve se reflectă prin formula:",
+                options: [
+                    { id: "a", text: "117 = 106" },
+                    { id: "b", text: "106 = 117" },
+                    { id: "c", text: "121 = 117" },
+                    { id: "d", text: "106 = 121" }
+                ],
+                correct: ["b"]
+            },
+            {
+                id: 35,
+                text: "Plata dividendelor în numerar către asociați se înregistrează astfel:",
+                options: [
+                    { id: "a", text: "457 = 5311" },
+                    { id: "b", text: "457 = % \n      5311 \n      446" },
+                    { id: "c", text: "457 = 5121" },
+                    { id: "d", text: "457 = 446" }
+                ],
+                correct: ["b"]
+            },
+            {
+                id: 36,
+                text: "Ce reflectă formula contabilă: 117 = 1012 50.000 lei",
+                options: [
+                    { id: "a", text: "majorarea capitalului social din rezerve" },
+                    { id: "b", text: "reducerea capitalului social pentru acoperirea pierderilor din anii precedenți" },
+                    { id: "c", text: "majorarea capitalului social pe seama rezultatului reportat" },
+                    { id: "d", text: "capitalizarea primelor de capital" }
+                ],
+                correct: ["b"]
+            },
+            {
+                id: 37,
+                text: "Provizioanele pentru riscuri și cheltuieli se constituie pe seama:",
+                options: [
+                    { id: "a", text: "veniturilor din exploatare" },
+                    { id: "b", text: "cheltuielilor de exploatare (contul 6812)" },
+                    { id: "c", text: "rezultatului reportat direct" },
+                    { id: "d", text: "capitalurilor proprii direct" }
+                ],
+                correct: ["b"]
+            },
+            {
+                id: 38,
+                text: "Constituirea unui provizion pentru litigii se înregistrează prin formula:",
+                options: [
+                    { id: "a", text: "6812 = 1511" },
+                    { id: "b", text: "1511 = 7812" },
+                    { id: "c", text: "6812 = 1512" },
+                    { id: "d", text: "6812 = 1518" }
+                ],
+                correct: ["a"]
+            },
+            {
+                id: 39,
+                text: "Anularea unui provizion devenit fără obiect se reflectă prin formula:",
+                options: [
+                    { id: "a", text: "6812 = 151" },
+                    { id: "b", text: "151 = 7812" },
+                    { id: "c", text: "151 = 6812" },
+                    { id: "d", text: "7812 = 151" }
+                ],
+                correct: ["b"]
+            },
+            {
+                id: 40,
+                text: "Ce semnifică formula contabilă: 6812 = 1512",
+                options: [
+                    { id: "a", text: "constituirea unui provizion pentru garanții acordate clienților" },
+                    { id: "b", text: "constituirea unui provizion pentru dezafectare imobilizări" },
+                    { id: "c", text: "constituirea unui provizion pentru litigii" },
+                    { id: "d", text: "constituirea unui provizion pentru restructurare" }
+                ],
+                correct: ["a"]
+            },
+            {
+                id: 41,
+                text: "Dacă la inventariere se constată un minus de numerar în casierie, considerat imputabil casierului, se fac înregistrările:",
+                options: [
+                    { id: "a", text: "1) 6588 = 5311 \n2) 4282 = 7588" },
+                    { id: "b", text: "1) 5311 = 7588 \n2) 4282 = 5311" },
+                    { id: "c", text: "1) 6588 = 5311 \n2) 461 = 7588" },
+                    { id: "d", text: "1) 609 = 5311 \n2) 4282 = 7588" }
+                ],
+                correct: ["a"]
+            },
+            {
+                id: 42,
+                text: "Dacă se constată un plus de numerar la casierie cu ocazia inventarierii, înregistrarea este:",
+                options: [
+                    { id: "a", text: "5311 = 6588" },
+                    { id: "b", text: "5311 = 7588" },
+                    { id: "c", text: "5311 = 475" },
+                    { id: "d", text: "5311 = 4282" }
+                ],
+                correct: ["b"]
+            },
+            {
+                id: 43,
+                text: "Costul de producție al unui bun include:",
+                options: [
+                    { id: "a", text: "costul de achiziție al materiilor prime și materialelor consumabile" },
+                    { id: "b", text: "cheltuielile directe de producție (manoperă directă, energie etc.)" },
+                    { id: "c", text: "cota cheltuielilor indirecte de producție rațional alocate" },
+                    { id: "d", text: "toate elementele de mai sus" }
+                ],
+                correct: ["d"]
+            },
+            {
+                id: 44,
+                text: "Valoarea producției neterminate determinate la finele lunii se înregistrează prin formula:",
+                options: [
+                    { id: "a", text: "331 = 711" },
+                    { id: "b", text: "711 = 331" },
+                    { id: "c", text: "345 = 711" },
+                    { id: "d", text: "331 = 345" }
+                ],
+                correct: ["a"]
+            },
+            {
+                id: 45,
+                text: "Ce reflectă formula contabilă: 348 = 711 2.000 lei",
+                options: [
+                    { id: "a", text: "diferențe nefavorabile aferente produselor vândute" },
+                    { id: "b", text: "diferențe nefavorabile aferente produselor obținute" },
+                    { id: "c", text: "producția neterminată rămasă la finele lunii" },
+                    { id: "d", text: "reluarea producției neterminate la începutul lunii" }
+                ],
+                correct: ["b"]
+            },
+            {
+                id: 46,
+                text: "Ce reflectă formula contabilă: 711 = 348 2.000 lei",
+                options: [
+                    { id: "a", text: "diferențe nefavorabile aferente produselor vândute" },
+                    { id: "b", text: "diferențe nefavorabile aferente produselor obținute" },
+                    { id: "c", text: "producția neterminată rămasă la finele lunii" },
+                    { id: "d", text: "reluarea producției neterminate la începutul lunii" }
+                ],
+                correct: ["a"]
+            },
+            {
+                id: 47,
+                text: "Ce reflectă formula contabilă: 711 = 331 2.000 lei",
+                options: [
+                    { id: "a", text: "diferențe nefavorabile aferente produselor vândute" },
+                    { id: "b", text: "diferențe nefavorabile aferente produselor obținute" },
+                    { id: "c", text: "producția neterminată rămasă la finele lunii" },
+                    { id: "d", text: "reluarea producției neterminate la începutul lunii" }
+                ],
+                correct: ["d"]
+            },
+            {
+                id: 48,
+                text: "Ce reflectă formula contabilă: 331 = 711 2.000 lei",
+                options: [
+                    { id: "a", text: "diferențe nefavorabile aferente produselor vândute" },
+                    { id: "b", text: "diferențe nefavorabile aferente produselor obținute" },
+                    { id: "c", text: "producția neterminată rămasă la finele lunii" },
+                    { id: "d", text: "reluarea producției neterminate la începutul lunii" }
+                ],
+                correct: ["c"]
+            },
+            {
+                id: 49,
+                text: "Înregistrarea reevaluării imobilizărilor corporale care conduce la o creștere a valorii contabile se înregistrează astfel:",
+                options: [
+                    { id: "a", text: "21x = 105" },
+                    { id: "b", text: "21x = 755" },
+                    { id: "c", text: "21x = 7813" },
+                    { id: "d", text: "105 = 21x" }
+                ],
+                correct: ["a"]
+            },
+            {
+                id: 50,
+                text: "Înregistrarea descreșterii valorii unei imobilizări corporale la reevaluare (fără să fi existat o reevaluare anterioară pozitivă) se reflectă astfel:",
+                options: [
+                    { id: "a", text: "105 = 21x" },
+                    { id: "b", text: "6813 = 21x" },
+                    { id: "c", text: "6583 = 21x" },
+                    { id: "d", text: "655 = 21x" }
+                ],
+                correct: ["b"]
+            }
+        ];
+
+        // Algoritmul de amestecare Fisher-Yates pentru intrebari si variante
+        function shuffle(array) {
+            let currentIndex = array.length, randomIndex;
+            const newArray = [...array];
+            while (currentIndex !== 0) {
+                randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex--;
+                [newArray[currentIndex], newArray[randomIndex]] = [newArray[randomIndex], newArray[currentIndex]];
+            }
+            return newArray;
+        }
+
+        function QuizApp() {
+            const [started, setStarted] = React.useState(false);
+            const [questions, setQuestions] = React.useState([]);
+            const [currentIndex, setCurrentIndex] = React.useState(0);
+            const [selectedOptions, setSelectedOptions] = React.useState([]);
+            const [submitted, setSubmitted] = React.useState(false);
+            const [score, setScore] = React.useState(0);
+            const [wrongAnswers, setWrongAnswers] = React.useState(0);
+            const [skipped, setSkipped] = React.useState(0);
+            const [showResults, setShowResults] = React.useState(false);
+
+            // Activare amestecare la inceperea chestionarului
+            const startQuiz = () => {
+                const shuffledQ = shuffle(originalQuestions).map(q => {
+                    return {
+                        ...q,
+                        options: shuffle(q.options)
+                    };
+                });
+                setQuestions(shuffledQ);
+                setCurrentIndex(0);
+                setSelectedOptions([]);
+                setSubmitted(false);
+                setScore(0);
+                setWrongAnswers(0);
+                setSkipped(0);
+                setShowResults(false);
+                setStarted(true);
+            };
+
+            const handleOptionClick = (optionId) => {
+                if (submitted) return;
+                const currentQuestion = questions[currentIndex];
+                const isMulti = currentQuestion.correct.length > 1;
+
+                if (isMulti) {
+                    if (selectedOptions.includes(optionId)) {
+                        setSelectedOptions(selectedOptions.filter(id => id !== optionId));
+                    } else {
+                        setSelectedOptions([...selectedOptions, optionId]);
+                    }
+                } else {
+                    setSelectedOptions([optionId]);
+                }
+            };
+
+            const handleSubmit = () => {
+                if (selectedOptions.length === 0 || submitted) return;
+
+                const currentQuestion = questions[currentIndex];
+                const correctSet = new Set(currentQuestion.correct);
+                const selectedSet = new Set(selectedOptions);
+
+                const isCorrect = correctSet.size === selectedSet.size && 
+                                  [...correctSet].every(id => selectedSet.has(id));
+
+                if (isCorrect) {
+                    setScore(prev => prev + 1);
+                } else {
+                    setWrongAnswers(prev => prev + 1);
+                }
+                setSubmitted(true);
+            };
+
+            const handleNext = () => {
+                const totalQ = questions.length;
+                if (currentIndex + 1 >= totalQ) {
+                    setShowResults(true);
+                } else {
+                    setCurrentIndex(prev => prev + 1);
+                    setSelectedOptions([]);
+                    setSubmitted(false);
+                }
+            };
+
+            const handleSkip = () => {
+                if (submitted) return;
+                setSkipped(prev => prev + 1);
+                setSubmitted(true);
+                setSelectedOptions([]); // Se considera raspuns gol / omis
+            };
+
+            if (!started) {
+                return (
+                    <div className="shell">
+                        <div className="card" style={{textAlign:"center", padding:"3.5rem 2rem"}}>
+                            <h1 className="title" style={{fontSize:"2.5rem", marginBottom:"1.5rem"}}>
+                                Examen Contabilitate Financiară
+                            </h1>
+                            <p style={{color:"#9ca3af", fontSize:"1.2rem", lineHeight:"1.6", marginBottom:"2.5rem", maxWidth:"600px", marginInline:"auto"}}>
+                                Un set de 50 de întrebări grilă bazat pe programa oficială de examinare. Ordinea întrebărilor și a răspunsurilor se amestecă la fiecare testare. Mult succes!
+                            </p>
+                            <button className="btn btn-primary" style={{fontSize:"1.15rem", padding:"1rem 3rem"}} onClick={startQuiz}>
+                                Începe Chestionarul 🚀
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+
+            if (showResults) {
+                const percentage = Math.round((score / questions.length) * 100);
+                return (
+                    <div className="shell">
+                        <div className="card">
+                            <div className="score-board">
+                                <div className="score-num">{score} / {questions.length}</div>
+                                <div className="score-label">Răspunsuri Corecte ({percentage}%)</div>
+                                
+                                <div className="stat-grid">
+                                    <div className="stat-card">
+                                        <div className="stat-val" style={{color:"#ef4444"}}>{wrongAnswers}</div>
+                                        <div className="stat-lbl">Greșite</div>
+                                    </div>
+                                    <div className="stat-card">
+                                        <div className="stat-val" style={{color:"#f59e0b"}}>{skipped}</div>
+                                        <div className="stat-lbl">Omise</div>
+                                    </div>
+                                </div>
+
+                                <button className="btn btn-primary" onClick={startQuiz}>
+                                    Încearcă Din Nou 🔄
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            const currentQuestion = questions[currentIndex];
+            const totalQ = questions.length;
+            const progressPercent = ((currentIndex + 1) / totalQ) * 100;
+            const isMulti = currentQuestion.correct.length > 1;
+            const canSubmit = selectedOptions.length > 0;
+
+            return (
+                <div className="shell">
+                    <div className="card">
+                        <div className="header">
+                            <div className="header-content">
+                                <span className="title" style={{fontSize: "1.35rem"}}>Grile Contabilitate</span>
+                                <span className="meta">Întrebarea {currentIndex + 1} din {totalQ}</span>
+                            </div>
+                        </div>
+
+                        <div className="question-container">
+                            <div className="question-text">
+                                {currentQuestion.text.split('\n').map((line, i) => {
+                                    // Stil special pentru formulele contabile pentru o citire mai usoara
+                                    if (line.includes('=') && (line.includes('101') || line.includes('758') || line.includes('442') || line.includes('%') || line.trim().match(/^\d{3}/))) {
+                                        return <div key={i} className="formula-box">{line}</div>;
+                                    }
+                                    return <p key={i} style={{marginBottom: "0.5rem"}}>{line}</p>;
+                                })}
+                            </div>
+
+                            {isMulti && (
+                                <p style={{color: "#8b5cf6", fontSize: "0.95rem", marginBottom: "1rem", fontWeight: "600"}}>
+                                    ⚠️ Atenție: Această întrebare are multiple răspunsuri corecte! Selectează-le pe toate.
+                                </p>
+                            )}
+
+                            <div className="options-list">
+                                {currentQuestion.options.map((opt) => {
+                                    const isSelected = selectedOptions.includes(opt.id);
+                                    const isCorrectOpt = currentQuestion.correct.includes(opt.id);
+                                    
+                                    let optionClass = "option-item";
+                                    if (submitted) {
+                                        if (isCorrectOpt) {
+                                            optionClass += " correct";
+                                        } else if (isSelected) {
+                                            optionClass += " incorrect";
+                                        }
+                                    } else if (isSelected) {
+                                        optionClass += " selected";
+                                    }
+
+                                    return (
+                                        <div 
+                                            key={opt.id} 
+                                            className={optionClass}
+                                            onClick={() => handleOptionClick(opt.id)}
+                                        >
+                                            <div className="badge">{opt.id.toUpperCase()}</div>
+                                            <div className="option-text">
+                                                {opt.text.split('\n').map((line, idx) => (
+                                                    <span key={idx} style={{display: "block"}}>{line}</span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+
+                            {submitted && (() => {
+                                const selectedSet = new Set(selectedOptions);
+                                const correctSet = new Set(currentQuestion.correct);
+                                const isCorrect = correctSet.size === selectedSet.size && 
+                                                  [...correctSet].every(id => selectedSet.has(id));
+
+                                const correctLabels = currentQuestion.correct.map(id => id.toUpperCase()).join(", ");
+
+                                if (selectedOptions.length === 0) {
+                                    return (
+                                        <div className="feedback feedback-error" style={{color: "#f59e0b", background: "rgba(245,158,11,0.1)", borderColor: "rgba(245,158,11,0.2)"}}>
+                                            <span className="feedback-icon">⚠️</span>
+                                            <span>
+                                                Ai omis această întrebare. Răspunsul corect era: <strong>{correctLabels}</strong>.
+                                            </span>
+                                        </div>
+                                    );
+                                } else if (isCorrect) {
+                                    return (
+                                        <div className="feedback feedback-success">
+                                            <span className="feedback-icon">✓</span>
+                                            <span>Excelent! Răspunsul tău este corect.</span>
+                                        </div>
+                                    );
+                                } else {
+                                    return (
+                                        <div className="feedback feedback-error">
+                                            <span className="feedback-icon">✗</span>
+                                            <span>
+                                                Răspuns greșit. Varianta/Variantele corecte: <strong>{correctLabels}</strong>.
+                                            </span>
+                                        </div>
+                                    );
+                                }
+                            })()}
+
+                            <div className="actions">
+                                {!submitted ? (
+                                    <>
+                                        <button className="btn btn-secondary" onClick={handleSkip}>
+                                            Omite
+                                        </button>
+                                        <button className="btn btn-primary" onClick={handleSubmit} disabled={!canSubmit}>
+                                            Verifică răspunsul →
+                                        </button>
+                                    </>
+                                ) : (
+                                    <button className="btn btn-primary" onClick={handleNext}>
+                                        {currentIndex + 1 >= totalQ ? "Vezi rezultatele 🏁" : "Întrebarea următoare →"}
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                        <div className="progress-bar" style={{width: `${progressPercent}%`}}></div>
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.createRoot(document.getElementById("root")).render(<QuizApp/>);
+    </script>
+</body>
+</html>
