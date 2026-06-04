@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Quiz — Contabilitate Financiară</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Source+Serif+4:wght@300;400;600&display=swap" rel="stylesheet"/>
+    <style>
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+        body{background:#0a0f1e;min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:'Source Serif 4',Georgia,serif;padding:1.5rem}
+        .shell{width:100%;max-width:780px;animation:fadeUp 0.5s ease both}
+        @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+        .card{background:#111827;border:1px solid #1f2937;border-radius:1.5rem;padding:2.5rem;box-shadow:0 20px 25px -5px rgba(0,0,0,0.5),0 10px 10px -5px rgba(0,0,0,0.04);position:relative;overflow:hidden}
+        .card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,#3b82f6,#8b5cf6)}
+        .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:2rem;border-bottom:1px solid #1f2937;padding-bottom:1.2rem}
+        .header-content{display:flex;justify-content:space-between;width:100%;align-items:center}
+        .title{font-family:'Playfair Display',Georgia,serif;color:#f3f4f6;font-size:1.75rem;font-weight:800}
+        .meta{font-size:0.875rem;color:#9ca3af;font-variant-numeric:tabular-nums}
+        .score-display{display:flex;gap:2rem;font-size:0.95rem;color:#e5e7eb;font-weight:600}
+        .score-item{display:flex;align-items:center;gap:0.5rem}
+        .score-item .label{color:#9ca3af}
+        .score-item .value{color:#3b82f6;font-size:1.2rem;font-weight:700}
+        .question-container{margin-bottom:2.5rem}
+        .question-text{font-size:1.35rem;line-height:1.6;color:#f3f4f6;margin-bottom:2rem;font-weight:400}
+        .options-list{display:flex;flex-direction:column;gap:1rem}
+        .option-item{display:flex;align-items:flex-start;background:#1f2937;border:2px solid #374151;border-radius:1rem;padding:1.15rem 1.5rem;cursor:pointer;transition:all 0.2s ease;position:relative}
+        .option-item:hover{background:#374151;border-color:#4b5563;transform:translateY(-1px)}
+        .option-item.selected{background:rgba(59,130,246,0.1);border-color:#3b82f6}
+        .option-item.correct{background:rgba(16,185,129,0.1);border-color:#10b981}
+        .option-item.incorrect{background:rgba(239,68,68,0.1);border-color:#ef4444}
+        .badge{width:1.75rem;height:1.75rem;border-radius:9999px;background:#374151;color:#d1d5db;display:flex;align-items:center;justify-content:center;font-size:0.875rem;font-weight:600;margin-right:1rem;flex-shrink:0}
+        .option-item.selected .badge{background:#3b82f6;color:#ffffff}
+        .option-item.correct .badge{background:#10b981;color:#ffffff}
+        .option-item.incorrect .badge{background:#ef4444;color:#ffffff}
+        .option-text{color:#e5e7eb;font-size:1.1rem;line-height:1.5;padding-top:0.05rem;width:100%}
+        .feedback{margin-top:2rem;padding:1.25rem 1.5rem;border-radius:1rem;font-size:1.05rem;line-height:1.5;display:flex;align-items:center;gap:0.75rem;animation:fadeIn 0.3s ease both}
+        @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+        .feedback-success{background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.2);color:#34d399}
+        .feedback-error{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);color:#f87171}
+        .feedback-icon{font-size:1.5rem;flex-shrink:0}
+        .actions{margin-top:2.5rem;display:flex;justify-content:flex-end;gap:1rem}
+        .btn{padding:0.85rem 2rem;border-radius:0.75rem;font-size:1rem;font-weight:600;cursor:pointer;border:none;transition:all 0.2s ease;font-family:'Source Serif 4',serif}
+        .btn-primary{background:#3b82f6;color:#ffffff}
+        .btn-primary:hover:not(:disabled){background:#2563eb;transform:translateY(-1px)}
+        .btn-primary:disabled{background:#1f2937;color:#4b5563;cursor:not-allowed}
+        .btn-secondary{background:transparent;color:#9ca3af;border:1px solid #374151}
+        .btn-secondary:hover{background:#1f2937;color:#ffffff}
+        .progress-bar{position:absolute;bottom:0;left:0;height:4px;background:#3b82f6;transition:width 0.3s ease}
+        .score-board{text-align:center;padding:3rem 1.5rem}
+        .score-num{font-family:'Playfair Display',serif;font-size:4rem;font-weight:800;color:#3b82f6;margin-bottom:1rem}
+        .score-label{font-size:1.25rem;color:#e5e7eb;margin-bottom:2rem}
+        .stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;margin-bottom:3rem}
+        .stat-card{background:#1f2937;border:1px solid #374151;border-radius:1rem;padding:1.5rem;text-align:center}
+        .stat-val{font-size:2rem;font-weight:600;color:#f3f4f6;margin-bottom:0.25rem}
+        .stat-lbl{font-size:0.875rem;color:#9ca3af;text-transform:uppercase;letter-spacing:0.05em}
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const quizQuestions = [
+            {
+                id: 1,
+                text: "Care dintre formulele contabile enumerate sunt în concordanță cu explicația dată:",
+                options: [
+                    { id: "a", text: "2111= 401 - cumpărarea de teren din subvenții pentru investiții" },
+                    { id: "b", text: "5121= 445 - încasarea creanței din vânzarea unui mijloc fix cu TVA" },
+                    { id: "c", text: "461= % - vânzarea unui mijloc fix cu TVA\n7583\n4427" },
+                    { id: "d", text: "4111= % - vânzarea unui mijloc fix cu TVA\n7583\n4426" }
+                ],
+                correct: ["c"]
+            },
+            {
+                id: 2,
+                text: "Care dintre formulele contabile enumerate sunt în concordanță cu explicația dată:",
+                options: [
+                    { id: "a", text: "% = 404 - achizitii de materii prime cu factura\n301\n4426" },
+                    { id: "b", text: "% = 408 - achiziția de stocuri fără factură\n301\n4428" },
+                    { id: "c", text: "345 = % - consumul de materii prime pentru producție\n301\n308" },
+                    { id: "d", text: "% = 408 - achiziția pe bază de factură\n301\n4428" }
+                ],
+                correct: ["b"]
+            },
+            {
+                id: 3,
+                text: "Produsele pot fi evaluate la:",
+                options: [
+                    { id: "a", text: "costul de producție și prețul standard" },
+                    { id: "b", text: "pretul de achizitie si pretul standard" },
+                    { id: "c", text: "pretul de productie si pretul de achizitie" },
+                    { id: "d", text: "valoarea de aport" }
+                ],
+                correct: ["a"]
+            },
+            {
+                id: 4,
+                text: "Care este sensul formulei contabile: 5311 = 4551",
+                options: [
+                    { id: "a", text: "deschiderea de conturi bancare curente pentru asociati" },
+                    { id: "b", text: "împrumuturi temporare de la asociați prin casieria unității" },
+                    { id: "c", text: "se deschid conturi curente pentru asociati în care se depun bani prin banca" },
+                    { id: "d", text: "obținerea unui împrumut temorar de la o filială" }
+                ],
+                correct: ["b"]
+            },
+            {
+                id: 5,
+                text: "Care este sensul formulelor contabile: 581 = 5411 și 5121 = 581",
+                options: [
+                    { id: "a", text: "suma neutilizată din acreditiv transferată în contul bancar" },
+                    { id: "b", text: "crearea unei acreditive în lei" },
+                    { id: "c", text: "crearea unei acreditive în valuta" },
+                    { id: "d", text: "schimbul valutei în lei" }
+                ],
+                correct: ["a"]
+            },
+            {
+                id: 6,
+                text: "Care dintre formulele contabile enumerate sunt în concordanță cu explicația dată:",
+                options: [
+                    { id: "a", text: "205 = 721 - dezvoltarea unui program informatic" },
+                    { id: "b", text: "461 = 7583 - încasarea unui proiect de dezvoltare vândut" },
+                    { id: "c", text: "% = 205 - scoaterea din evidență a unui brevet parțial amortizat\n2805\n6583" },
+                    { id: "d", text: "% = 205 –vânzarea unui brevet parțial amortizat\n2805\n5121" }
+                ],
+                correct: ["c"]
+            },
+            {
+                id: 7,
+                text: "Care dintre următoarele înregistrări NU se potrivesc cu explicația dată:",
+                options: [
+                    { id: "a", text: "345 = 711 - obţinerea produselor finite la cost de producţie" },
+                    { id: "b", text: "4111 = % - vânzarea produselor finite către clienți\n707\n4427" },
+                    { id: "c", text: "5121 = 4111 - încasarea creanței prin bancă" },
+                    { id: "d", text: "603 = 303 minusul la inventarul materiilor prime" }
+                ],
+                correct: ["b"]
+            },
+            {
+                id: 8,
+                text: "Care este sensul formulei contabile: 401 = %\n5124\n765",
+                options: [
+                    { id: "a", text: "plata unui furnizor în valută în numerar cu diferențe favorabile" },
+                    { id: "b", text: "plata unui furnizor în valută din contul de valută cu diferențe nefavorabile" },
+                    { id: "c", text: "plata unui furnizor de marfă, în valută, din contul de valută cu diferențe favorabile" },
+                    { id: "d", text: "plata unui furnizor, în valută, pentru achiziția de mijloace de transport" }
+                ],
+                correct: ["c"]
+            },
+            {
+                id: 9,
+                text: "Care este sensul formulei contabile: 1011 = 1012",
+                options: [
+                    { id: "a", text: "aducerea capitalului subscris în societate" },
+                    { id: "b", text: "subscrierea de capital" },
+                    { id: "c", text: "transferul capitalului subscris nevărsat la capitalul vărsat" },
+                    { id: "d", text: "diminuarea capitalului social ca urmare a retragerii unui asociat" }
+                ],
+                correct: ["c"]
+            },
+            {
+                id: 10,
+                text: "Care dintre formulele contabile enumerate sunt în concordanță cu explicația dată:",
+                options: [
+                    { id: "a", text: "461 = 161 - subscrierea obligațiunilor emise și încă nedecontate" },
+                    { id: "b", text: "5411 = 461 - încasarea obligaţiunilor subscrise şi stingerea creanţei prin numerar" },
+                    { id: "c", text: "161 = 4111 - colectarea obligațiunilor emise" },
+                    { id: "d", text: "161 = 766 – dobânda cuvenită pentru obligațiuni" }
+                ],
+                correct: ["a"]
+            },
+            {
+                id: 11,
+                text: "Care este sensul formulei contabile: % = 456\n212\n207",
+                options: [
+                    { id: "a", text: "aportul cu o clădire de către un acţionar" },
+                    { id: "b", text: "subscrierea unei contribuții de către un acționar" },
+                    { id: "c", text: "aport adus de către acţionar a unui imobil cu fondul comercial corespunzător" },
+                    { id: "d", text: "restituirea cladirii către un acționar care se retrage din firmă" }
+                ],
+                correct: ["c"]
+            },
+            {
+                id: 12,
+                text: "Care este sensul formulei contabile: % = 711\n12.000\n345\n10.000\n341\n2.000",
+                options: [
+                    { id: "a", text: "obtinerea de produse finite la pret standard cu diferente favorabile" },
+                    { id: "b", text: "obtinerea de produse finite si semifabricate din procesul de productie" },
+                    { id: "c", text: "obtinerea de produse finite la pret standard cu diferente nefavorabile" },
+                    { id: "d", text: "descărcarea gestiuni de produsele și semifabricatele vândute" }
+                ],
+                correct: ["b"]
+            },
+            {
+                id: 13,
+                text: "Care este sensul formulelor contabile: 581 = 5121 si 5311 = 581",
+                options: [
+                    { id: "a", text: "banii din casierie se depun în contul bancar" },
+                    { id: "b", text: "plata din contul bancar" },
+                    { id: "c", text: "retragerea de bani din casierie și depunerea în contul de la bancă" },
+                    { id: "d", text: "retragerea de bani de la bancă și depunerea în casierie" }
+                ],
+                correct: ["d"]
+            },
+            {
+                id: 14,
+                text: "Care este documentul care furnizează dovezile operațiilor de încasări și plăți prin casierie?",
+                options: [
+                    { id: "a", text: "Registrul de inventar" },
+                    { id: "b", text: "Registrul-jurnal" },
+                    { id: "c", text: "Extrasul de cont bancar" },
+                    { id: "d", text: "Registrul de casă" }
+                ],
+                correct: ["d"]
+            },
+            {
+                id: 15,
+                text: "Care este sensul formulei contabile: 1171 = 1012",
+                options: [
+                    { id: "a", text: "subscrierea de capital social" },
+                    { id: "b", text: "majorarea capitalului social după subscriere" },
+                    { id: "c", text: "majorarea capitalului cu rezultatul reportat" },
+                    { id: "d", text: "acoperirea pierderii reportate din capitalul social" }
+                ],
+                correct: ["d"]
+            },
+            {
+                id: 16,
+                text: "Care dintre următoarele înregistrări NU se potrivesc cu explicația dată:",
+                options: [
+                    { id: "a", text: "2111 = 456 – primirea unui teren ca aport de capital" },
+                    { id: "b", text: "2111 = 462 – o donație de teren primită" },
+                    { id: "c", text: "2111 = 404 – achiziţionarea unui teren de la furnizori" },
+                    { id: "d", text: "2112 = 722 – recepția unei amenajări efectuate cu efort propriu" }
+                ],
+                correct: ["b"]
+            },
+            {
+                id: 17,
+                text: "Care este sensul formulei contabile: 371 = %\n12.034 lei\n378\n6.600 lei\n4428\n5.434 lei",
+                options: [
+                    { id: "a", text: "costul de achiziție al mărfurilor cumpărate de la terți" },
+                    { id: "b", text: "înregistrarea adaosului la mărfurile vândute" },
+                    { id: "c", text: "adaos comercial si TVA inclusă în păreț pentru marfa achizitionată" },
+                    { id: "d", text: "descărcarea valoarii cu amănuntul la mărfurile vândute" }
+                ],
+                correct: ["c"]
+            },
+            {
+                id: 18,
+                text: "Care este sensul formulei contabile: 401 = 5191",
+                options: [
+                    { id: "a", text: "plata unui furnizor din contul bancar" },
+                    { id: "b", text: "plata unui furnizor de mijloace fixe dintr-un credit pe termen scurt" },
+                    { id: "c", text: "rambursarea unui credit bancar pe termen scurt" },
+                    { id: "d", text: "plata directă a unui furnizor de stocuri din credit pe termen scurt contractat" }
+                ],
+                correct: ["d"]
+            },
+            {
+                id: 19,
+                text: "Care dintre formulele contabile următoare sunt în concordanță cu explicația dată:",
+                options: [
+                    { id: "a", text: "456 = 1011, aport la capital în natură" },
+                    { id: "b", text: "1011 = 1012, conversia capitalului nevărsat în capital vărsat" },
+                    { id: "c", text: "5311 = 456, aport la capital în natură" },
+                    { id: "d", text: "1012 = 1011 vărsarea capitalului social" }
+                ],
+                correct: ["b"]
+            },
+            {
+                id: 20,
+                text: "Care este sensul formulei contabile: % = 401\n351\n4426",
+                options: [
+                    { id: "a", text: "materii prime achizitionate de la furnizori fără factură" },
+                    { id: "b", text: "materiile prime achizitionate si lasate in custodia furnizorului" },
+                    { id: "c", text: "materiile prime preluate de la furnizori pentru prelucrare" },
+                    { id: "d", text: "materii prime disponibile pentru producție" }
+                ],
+                correct: ["b"]
+            },
+            {
+                id: 21,
+                text: "Care este sensul formulei contabile: 5191 = 5192",
+                options: [
+                    { id: "a", text: "înregistrare credite pe termen scurt restante" },
+                    { id: "b", text: "primirea unui credit pe termen scurt" },
+                    { id: "c", text: "plata creditului pe termen scurt restant" },
+                    { id: "d", text: "înregistrarea dobânzii pentru creditul restant" }
+                ],
+                correct: ["a"]
+            },
+            {
+                id: 22,
+                text: "Care dintre următoarele înregistrări NU se potrivesc cu explicația dată:",
+                options: [
+                    { id: "a", text: "2112 = 404 - executarea unui amenajări de teren de către unităţi specializate" },
+                    { id: "b", text: "461 = % - vânzarea unui teren\n7583\n4427" },
+                    { id: "c", text: "2811 = 2112 - eliminarea din contabilitate a unei amenajări de teren parțial amortizate" },
+                    { id: "d", text: "2112 = 456 amenajarea de teren primită ca aport" }
+                ],
+                correct: ["c"]
+            },
+            {
+                id: 23,
+                text: "Care dintre formulele contabile enumerate sunt în concordanță cu explicația dată:",
+                options: [
+                    { id: "a", text: "506 = 462 - dobândirea de obligațiuni și stabilirea datoriilor față de creditori" },
+                    { id: "b", text: "462 = 5311 – rambursarea prin virament a creditorilor" },
+                    { id: "c", text: "5121 = 461 - sume încasate de la diverși debitori prin casierie" },
+                    { id: "d", text: "461 = 711 vânzarea de produse finite" }
+                ],
+                correct: ["a"]
+            },
+            {
+                id: 24,
+                text: "Care este sensul formulei contabile: 456 = %\n1011\n1041",
+                options: [
+                    { id: "a", text: "reflectarea primelor datorate către noii actionari" },
+                    { id: "b", text: "reflectarea creanțele față de noii acționari pentru capitalul subscris și pentru prima de emisiune" },
+                    { id: "c", text: "reflectarea capitalul depus și vărsat și prima de emisiune aferentă" },
+                    { id: "d", text: "retragerea unui acționar de la capitalul social" }
+                ],
+                correct: ["b"]
+            },
+            {
+                id: 25,
+                text: "Care dintre următoarele înregistrări NU se potrivesc cu explicația dată:",
+                options: [
+                    { id: "a", text: "623 = 345 - produse finite utilizate pentru propriile activități de protocol" },
+                    { id: "b", text: "601 = 345 - produse finite distruse de calamități" },
+                    { id: "c", text: "6582 = 345 - donații de produse finite acordate" },
+                    { id: "d", text: "601 = 301 - lipsa la inventar de materii prime" }
+                ],
+                correct: ["b"]
+            },
+            {
+                id: 26,
+                text: "Care dintre următoarele înregistrări NU se potrivesc cu explicația dată:",
+                options: [
+                    { id: "a", text: "401 = 5121 - plata prin banca a unei datorii către furnizor" },
+                    { id: "b", text: "421 = 5311 - plata salariilor la sfarsitul lunii prin casierie" },
+                    { id: "c", text: "641 = 421 – cheltuieli cu salariile datorate" },
+                    { id: "d", text: "421 = 425 - plata avansurilor salariale prin virament" }
+                ],
+                correct: ["d"]
+            },
+            {
+                id: 27,
+                text: "Care dintre formulele contabile enumerate sunt în concordanță cu explicația dată:",
+                options: [
+                    { id: "a", text: "456 = 1012 - creanțe față de acționari pentru capitalul subscris" },
+                    { id: "b", text: "5311 = 1011 - depunerea numerarului ca aport la capitalurile proprii" },
+                    { id: "c", text: "1041 = 1068 - încorporarea primelor de emisiune în alte reserve" },
+                    { id: "d", text: "121 = 1068 – constituirea altor rezerve din profit" }
+                ],
+                correct: ["c"]
+            },
+            {
+                id: 28,
+                text: "Utilizarea timbrelor poștale se înregistrează prin formula contabilă:",
+                options: [
+                    { id: "a", text: "626 = 5321" },
+                    { id: "b", text: "635 = 5321" },
+                    { id: "c", text: "401 = 5321" },
+                    { id: "d", text: "658 = 5321" }
+                ],
+                correct: ["a"]
+            },
+            {
+                id: 29,
+                text: "Care dintre formulele contabile enumerate sunt în concordanță cu explicația dată:",
+                options: [
+                    { id: "a", text: "404 = 5411 – plata unui furnizor pentru active imobilizate dintr-un acreditiv" },
+                    { id: "b", text: "5411 = 5121 - deschiderea unei acreditiv utilizând sumele din contul curent în lei" },
+                    { id: "c", text: "401 = 5121 - plata unui furnizor de materii prime dintr-un acreditiv" },
+                    { id: "d", text: "5411 = 4111 încasarea de la client a unei facturi dintrun acreditiv" }
+                ],
+                correct: ["a"]
+            },
+            {
+                id: 30,
+                text: "Care este sensul formulei contabile: 361 = 7582",
+                options: [
+                    { id: "a", text: "animalele primite ca aport la capital" },
+                    { id: "b", text: "animale primite cu titlu gratuit" },
+                    { id: "c", text: "animale achizitionate din avansuri de trezorerie" },
+                    { id: "d", text: "animale donate unei alte entități" }
+                ],
+                correct: ["b"]
+            },
+            {
+                id: 31,
+                text: "Care din următoarele formule contabile sunt în concordanță cu explicația dată:",
+                options: [
+                    { id: "a", text: "462 = 5121 - plata unei redevențe prin casierie" },
+                    { id: "b", text: "612 = 462 - redevență încasată de concesionar" },
+                    { id: "c", text: "205 = 167 - achizitia de la terții a unui brevet" },
+                    { id: "d", text: "167 = 205 - restituirea unui utilajul concesionat" }
+                ],
+                correct: ["d"]
+            },
+            {
+                id: 32,
+                text: "Care din următoarele formule contabile sunt în concordanță cu explicația dată:",
+                options: [
+                    { id: "a", text: "462 = 5121 - încasarea unei redevențe prin casierie" },
+                    { id: "b", text: "612 = 462 - redevența cuvenită concedentului" },
+                    { id: "c", text: "205 = 167 – intrarea prin concesiune a unui teren" },
+                    { id: "d", text: "2111 = 205 - intrarea prin concesiune a unui teren" }
+                ],
+                correct: ["c"]
+            },
+            {
+                id: 33,
+                text: "Care dintre următoarele înregistrări corespund cu explicația dată:",
+                options: [
+                    { id: "a", text: "2133 = 456 – primirea unui mijloc de transport ca aport la capital" },
+                    { id: "b", text: "2111 = 462 – un teren primit prin donație" },
+                    { id: "c", text: "2133 = 401 – achiziţionarea unui mijloc de transport de la furnizori" },
+                    { id: "d", text: "2112 = 721 – recepția unei amenajări de teren efectuate cu efort propriu" }
+                ],
+                correct: ["a"]
+            },
+            {
+                id: 34,
+                text: "Care dintre următoarele înregistrări corespund cu explicația dată:",
+                options: [
+                    { id: "a", text: "2111 = 1012 – primirea unui teren ca aport de capital" },
+                    { id: "b", text: "2111 = 462 – o donație de teren primită" },
+                    { id: "c", text: "2111 = 401 – achiziţionarea unui teren de la furnizori" },
+                    { id: "d", text: "2112 = 722 – recepția unei amenajări efectuate cu efort propriu" }
+                ],
+                correct: ["d"]
+            },
+            {
+                id: 35,
+                text: "Care dintre următoarele înregistrări se potrivesc cu explicația dată:",
+                options: [
+                    { id: "a", text: "623 = 345 - produse finite utilizate pentru propriile activități de protocol" },
+                    { id: "b", text: "601 = 345 - produse finite distruse de calamități" },
+                    { id: "c", text: "6811 = 345 - donații de produse finite acordate" },
+                    { id: "d", text: "301 = 601 - lipsa la inventar de materii prime" }
+                ],
+                correct: ["a"]
+            },
+            {
+                id: 36,
+                text: "Care dintre următoarele înregistrări se potrivesc cu explicația dată:",
+                options: [
+                    { id: "a", text: "601 = 345 - produse finite utilizate pentru propriile activități de protocol" },
+                    { id: "b", text: "628 = 345 - produse finite distruse de calamități" },
+                    { id: "c", text: "445 = 345 - donații de produse finite acordate" },
+                    { id: "d", text: "601 = 301 - lipsa la inventar de materii prime" }
+                ],
+                correct: ["d"]
+            },
+            {
+                id: 37,
+                text: "Care dintre următoarele înregistrări se potrivesc cu explicația dată:",
+                options: [
+                    { id: "a", text: "721 = 345 – descărcarea gestiunii de produse finite vândute" },
+                    { id: "b", text: "601 = 345 - produse finite distruse de calamități" },
+                    { id: "c", text: "6582 = 381 – ambalaje acordate ca donații" },
+                    { id: "d", text: "601 = 371 – transferal de materii prime la mărfuri" }
+                ],
+                correct: ["c"]
+            },
+            {
+                id: 38,
+                text: "Care dintre formulele contabile enumerate sunt în concordanță cu explicația dată:",
+                options: [
+                    { id: "a", text: "404 = 5411 – plata unui furnizor de mărfuri dintr-un acreditiv" },
+                    { id: "b", text: "581 = 5411 închiderea acreditivului neutilizat" },
+                    { id: "c", text: "5411 = 5121 - deschiderea unei acreditiv utilizând sumele din contul curent în lei" },
+                    { id: "d", text: "401 = 5121 - plata unui furnizor de utilaje dintr-un acreditiv" }
+                ],
+                correct: ["b"]
+            },
+            {
+                id: 39,
+                text: "Care formula corespunde explicației asociate:",
+                options: [
+                    { id: "a", text: "371 = 378 adaosul comercial aferent mărfurilor intrate" },
+                    { id: "b", text: "371 = 378 adaosul comercial aferent mărfurilor ieșite" },
+                    { id: "c", text: "371= 1012 măfuri primite ca aport la capital" },
+                    { id: "d", text: "1012 = 371 restituirea aportului sub formă de mărfuri" }
+                ],
+                correct: ["a"]
+            },
+            {
+                id: 40,
+                text: "Care formula corespunde explicației asociate:",
+                options: [
+                    { id: "a", text: "378 = 707 adaosul comercial aferent mărfurilor ieșite" },
+                    { id: "b", text: "378 = 371 adaosul comercial aferent mărfurilor intrate" },
+                    { id: "c", text: "371= 1011 măfuri primite ca aport la capital" },
+                    { id: "d", text: "1011 = 371 restituirea aportului sub formă de mărfuri" }
+                ],
+                correct: ["b"]
+            },
+            {
+                id: 41,
+                text: "Care este sensul formulei contabile: 1012 = 1171",
+                options: [
+                    { id: "a", text: "subscrierea de capital social" },
+                    { id: "b", text: "acoperirea pierderii reportate din capitalul social" },
+                    { id: "c", text: "majorarea capitalului social după subscriere" },
+                    { id: "d", text: "majorarea capitalului cu rezultatul reportat" }
+                ],
+                correct: ["b"]
+            },
+            {
+                id: 42,
+                text: "Care dintre formulele contabile enumerate sunt în concordanță cu explicația dată:",
+                options: [
+                    { id: "a", text: "1012 = 456 - datorii față de acționarii care se retrag de la capitalul social" },
+                    { id: "b", text: "456 = 5311 – încasarea numerarului de la acționari, ca aport la capitalurile proprii" },
+                    { id: "c", text: "456 = 1012 – vărsarea capitalului ca urmare a primirii aporturilor" },
+                    { id: "d", text: "456 = 1063 – constituirea rezervei statutare din aportul acționarilor" }
+                ],
+                correct: ["a"]
+            },
+            {
+                id: 43,
+                text: "Care dintre următoarele înregistrări descrie obținerea cu efort propriu a unui program informatic:",
+                options: [
+                    { id: "a", text: "208 = 331" },
+                    { id: "b", text: "208 = 711" },
+                    { id: "c", text: "208 = 7583" },
+                    { id: "d", text: "208 = 721" }
+                ],
+                correct: ["d"]
+            },
+            {
+                id: 44,
+                text: "În metoda inventarului intermitent, care formulă contabilă corespunde explicației asociate:",
+                options: [
+                    { id: "a", text: "371 = 601 - transferul la mărfuri al materiilor prime" },
+                    { id: "b", text: "6582 = 301 - materii prime acordate ca donație" },
+                    { id: "c", text: "301= 401 - achiziția de materii prime" },
+                    { id: "d", text: "601 = 301 materii prime existente în stoc la finele lunii" }
+                ],
+                correct: ["a"]
+            },
+            {
+                id: 45,
+                text: "Ce reflectă formula contabilă: 348 = 711 2.000 lei",
+                options: [
+                    { id: "a", text: "diferențe nefavorabile aferente produselor vândute" },
+                    { id: "b", text: "diferențe nefavorabile aferente produselor obținute" },
+                    { id: "c", text: "producția neterminată rămasă la finele lunii" },
+                    { id: "d", text: "reluarea producției neterminate la începutul lunii" }
+                ],
+                correct: ["b"]
+            },
+            {
+                id: 46,
+                text: "Ce reflectă formula contabilă: 711 = 348 2.000 lei",
+                options: [
+                    { id: "a", text: "diferențe nefavorabile aferente produselor vândute" },
+                    { id: "b", text: "diferențe nefavorabile aferente produselor obținute" },
+                    { id: "c", text: "producția neterminată rămasă la finele lunii" },
+                    { id: "d", text: "reluarea producției neterminate la începutul lunii" }
+                ],
+                correct: ["a"]
+            },
+            {
+                id: 47,
+                text: "Ce reflectă formula contabilă: 711 = 331 2.000 lei",
+                options: [
+                    { id: "a", text: "diferențe nefavorabile aferente produselor vândute" },
+                    { id: "b", text: "diferențe nefavorabile aferente produselor obținute" },
+                    { id: "c", text: "producția neterminată rămasă la finele lunii" },
+                    { id: "d", text: "reluarea producției neterminate la începutul lunii" }
+                ],
+                correct: ["d"]
+            },
+            {
+                id: 48,
+                text: "Ce reflectă formula contabilă: 331 = 711 2.000 lei",
+                options: [
+                    { id: "a", text: "diferențe nefavorabile aferente produselor vândute" },
+                    { id: "b", text: "diferențe nefavorabile aferente produselor obținute" },
+                    { id: "c", text: "producția neterminată rămasă la finele lunii" },
+                    { id: "d", text: "reluarea producției neterminate la începutul lunii" }
+                ],
+                correct: ["c"]
+            },
+            {
+                id: 49,
+                text: "Dobânda datorată la scadență pentru un credit bancar pe termen lung se înregistrează cu formula:",
+                options: [
+                    { id: "a", text: "1682 = 1621" },
+                    { id: "b", text: "1621 = 766" },
+                    { id: "c", text: "666 = 1682" },
+                    { id: "d", text: "666 = 1621" }
+                ],
+                correct: ["c"]
+            },
+            {
+                id: 50,
+                text: "Garanția de bună execuție reținută din sumele datorate furnizorului pentru un contract de construcții se înregistrează cu formula:",
+                options: [
+                    { id: "a", text: "401 = 267" },
+                    { id: "b", text: "167 = 401" },
+                    { id: "c", text: "401 = 167" },
+                    { id: "d", text: "267 = 401" }
+                ],
+                correct: ["c"]
+            }
+        ];
+
+        function shuffle(array) {
+            let currentIndex = array.length, randomIndex;
+            const newArray = [...array];
+            while (currentIndex !== 0) {
+                randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex--;
+                [newArray[currentIndex], newArray[randomIndex]] = [newArray[randomIndex], newArray[currentIndex]];
+            }
+            return newArray;
+        }
+
+        function QuizApp() {
+            const [started, setStarted] = React.useState(false);
+            const [questions, setQuestions] = React.useState([]);
+            const [currentIndex, setCurrentIndex] = React.useState(0);
+            const [selectedOptions, setSelectedOptions] = React.useState([]);
+            const [submitted, setSubmitted] = React.useState(false);
+            const [score, setScore] = React.useState(0);
+            const [wrongAnswers, setWrongAnswers] = React.useState(0);
+            const [skipped, setSkipped] = React.useState(0);
+            const [showResults, setShowResults] = React.useState(false);
+
+            const startQuiz = () => {
+                const shuffledQ = shuffle(quizQuestions).map(q => {
+                    return {
+                        ...q,
+                        options: shuffle(q.options)
+                    };
+                });
+                setQuestions(shuffledQ);
+                setCurrentIndex(0);
+                setSelectedOptions([]);
+                setSubmitted(false);
+                setScore(0);
+                setWrongAnswers(0);
+                setSkipped(0);
+                setShowResults(false);
+                setStarted(true);
+            };
+
+            const handleOptionClick = (optionId) => {
+                if (submitted) return;
+                setSelectedOptions([optionId]);
+            };
+
+            const handleSubmit = () => {
+                if (selectedOptions.length === 0 || submitted) return;
+
+                const currentQuestion = questions[currentIndex];
+                const correctSet = new Set(currentQuestion.correct);
+                const selectedSet = new Set(selectedOptions);
+
+                const isCorrect = correctSet.size === selectedSet.size && 
+                                  [...correctSet].every(id => selectedSet.has(id));
+
+                if (isCorrect) {
+                    setScore(prev => prev + 1);
+                } else {
+                    setWrongAnswers(prev => prev + 1);
+                }
+                setSubmitted(true);
+            };
+
+            const handleNext = () => {
+                const totalQ = questions.length;
+                if (currentIndex + 1 >= totalQ) {
+                    setShowResults(true);
+                } else {
+                    setCurrentIndex(prev => prev + 1);
+                    setSelectedOptions([]);
+                    setSubmitted(false);
+                }
+            };
+
+            const handleSkip = () => {
+                if (submitted) return;
+                setSkipped(prev => prev + 1);
+                setSubmitted(true);
+                setSelectedOptions([]);
+            };
+
+            if (!started) {
+                return (
+                    <div className="shell">
+                        <div className="card" style={{textAlign:"center", padding:"3.5rem 2rem"}}>
+                            <h1 className="title" style={{fontSize:"2.5rem", marginBottom:"1.5rem"}}>
+                                Examen Contabilitate Financiară
+                            </h1>
+                            <p style={{color:"#9ca3af", fontSize:"1.2rem", lineHeight:"1.6", marginBottom:"2.5rem", maxWidth:"600px", marginInline:"auto"}}>
+                                Un set de 50 de întrebări grilă bazat pe programa oficială de examinare. Ordinea întrebărilor și a răspunsurilor se amestecă la fiecare testare. Mult succes!
+                            </p>
+                            <button className="btn btn-primary" style={{fontSize:"1.15rem", padding:"1rem 3rem"}} onClick={startQuiz}>
+                                Începe Chestionarul 🚀
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+
+            if (showResults) {
+                const percentage = Math.round((score / questions.length) * 100);
+                return (
+                    <div className="shell">
+                        <div className="card">
+                            <div className="score-board">
+                                <div className="score-num">{score} / {questions.length}</div>
+                                <div className="score-label">Răspunsuri Corecte ({percentage}%)</div>
+                                
+                                <div className="stat-grid">
+                                    <div className="stat-card">
+                                        <div className="stat-val" style={{color:"#10b981"}}>{score}</div>
+                                        <div className="stat-lbl">Corecte</div>
+                                    </div>
+                                    <div className="stat-card">
+                                        <div className="stat-val" style={{color:"#ef4444"}}>{wrongAnswers}</div>
+                                        <div className="stat-lbl">Greșite</div>
+                                    </div>
+                                    <div className="stat-card">
+                                        <div className="stat-val" style={{color:"#f59e0b"}}>{skipped}</div>
+                                        <div className="stat-lbl">Omise</div>
+                                    </div>
+                                </div>
+
+                                <button className="btn btn-primary" onClick={startQuiz}>
+                                    Încearcă Din Nou 🔄
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            const currentQuestion = questions[currentIndex];
+            const totalQ = questions.length;
+            const progressPercent = ((currentIndex + 1) / totalQ) * 100;
+            const canSubmit = selectedOptions.length > 0;
+
+            return (
+                <div className="shell">
+                    <div className="card">
+                        <div className="header">
+                            <div className="header-content">
+                                <span className="title" style={{fontSize: "1.35rem"}}>Grile Contabilitate</span>
+                                <div className="score-display">
+                                    <div className="score-item">
+                                        <span className="label">Corecte:</span>
+                                        <span className="value">{score}</span>
+                                    </div>
+                                    <div className="score-item">
+                                        <span className="label">Întrebări rămase:</span>
+                                        <span className="value">{totalQ - currentIndex - 1}</span>
+                                    </div>
+                                    <span className="meta">Q{currentIndex + 1}/{totalQ}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="question-container">
+                            <div className="question-text">
+                                {currentQuestion.text}
+                            </div>
+
+                            <div className="options-list">
+                                {currentQuestion.options.map((opt) => {
+                                    const isSelected = selectedOptions.includes(opt.id);
+                                    const isCorrectOpt = currentQuestion.correct.includes(opt.id);
+                                    
+                                    let optionClass = "option-item";
+                                    if (submitted) {
+                                        if (isCorrectOpt) {
+                                            optionClass += " correct";
+                                        } else if (isSelected) {
+                                            optionClass += " incorrect";
+                                        }
+                                    } else if (isSelected) {
+                                        optionClass += " selected";
+                                    }
+
+                                    return (
+                                        <div 
+                                            key={opt.id} 
+                                            className={optionClass}
+                                            onClick={() => handleOptionClick(opt.id)}
+                                        >
+                                            <div className="badge">{opt.id.toUpperCase()}</div>
+                                            <div className="option-text">
+                                                {opt.text}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+
+                            {submitted && (() => {
+                                const selectedSet = new Set(selectedOptions);
+                                const correctSet = new Set(currentQuestion.correct);
+                                const isCorrect = correctSet.size === selectedSet.size && 
+                                                  [...correctSet].every(id => selectedSet.has(id));
+
+                                const correctLabels = currentQuestion.correct.map(id => id.toUpperCase()).join(", ");
+
+                                if (selectedOptions.length === 0) {
+                                    return (
+                                        <div className="feedback feedback-error" style={{color: "#f59e0b", background: "rgba(245,158,11,0.1)", borderColor: "rgba(245,158,11,0.2)"}}>
+                                            <span className="feedback-icon">⚠️</span>
+                                            <span>
+                                                Ai omis această întrebare. Răspunsul corect era: <strong>{correctLabels}</strong>.
+                                            </span>
+                                        </div>
+                                    );
+                                } else if (isCorrect) {
+                                    return (
+                                        <div className="feedback feedback-success">
+                                            <span className="feedback-icon">✓</span>
+                                            <span>Excelent! Răspunsul tău este corect.</span>
+                                        </div>
+                                    );
+                                } else {
+                                    return (
+                                        <div className="feedback feedback-error">
+                                            <span className="feedback-icon">✗</span>
+                                            <span>
+                                                Răspuns greșit. Varianta corectă: <strong>{correctLabels}</strong>.
+                                            </span>
+                                        </div>
+                                    );
+                                }
+                            })()}
+
+                            <div className="actions">
+                                {!submitted ? (
+                                    <>
+                                        <button className="btn btn-secondary" onClick={handleSkip}>
+                                            Omite
+                                        </button>
+                                        <button className="btn btn-primary" onClick={handleSubmit} disabled={!canSubmit}>
+                                            Verifică răspunsul →
+                                        </button>
+                                    </>
+                                ) : (
+                                    <button className="btn btn-primary" onClick={handleNext}>
+                                        {currentIndex + 1 >= totalQ ? "Vezi rezultatele 🏁" : "Întrebarea următoare →"}
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                        <div className="progress-bar" style={{width: `${progressPercent}%`}}></div>
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.createRoot(document.getElementById("root")).render(<QuizApp/>);
+    </script>
+</body>
+</html>
